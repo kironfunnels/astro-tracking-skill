@@ -1,0 +1,9 @@
+# Local secrets for `npx wrangler pages dev` / `astro dev` with the Cloudflare adapter.
+# Copy to .dev.vars (never commit it; .dev.vars* must be in .gitignore).
+# Production values are set as encrypted secrets in the Cloudflare dashboard, not here.
+META_CAPI_TOKEN=
+META_TEST_EVENT_CODE=
+TIKTOK_EVENTS_TOKEN=
+TIKTOK_TEST_EVENT_CODE=
+PINTEREST_CONVERSIONS_TOKEN=
+MICROSOFT_CAPI_TOKEN=

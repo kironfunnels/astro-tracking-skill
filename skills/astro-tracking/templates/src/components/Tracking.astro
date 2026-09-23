@@ -1,0 +1,15 @@
+---
+// Place once per layout, as the first child of <body>. The script is bundled by Astro as a deferred module,
+// so it never blocks rendering. The <noscript> fallbacks only matter for visitors without JavaScript.
+import { tracking } from '../tracking/config';
+const { meta, gtm } = tracking;
+---
+<script>
+  import '../tracking/client';
+</script>
+{gtm.containerId && (
+  <noscript><iframe src={`https://www.googletagmanager.com/ns.html?id=${gtm.containerId}`} height="0" width="0" style="display:none;visibility:hidden" title="Google Tag Manager"></iframe></noscript>
+)}
+{meta.pixelId && (
+  <noscript><img height="1" width="1" style="display:none" alt="" src={`https://www.facebook.com/tr?id=${meta.pixelId}&ev=PageView&noscript=1`} /></noscript>
+)}
