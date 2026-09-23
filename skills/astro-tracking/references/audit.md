@@ -7,7 +7,11 @@
 node <skill>/scripts/audit-site.mjs https://site.com/pagina/ --pages 3 --wait 4000 --json reports/tracking-audit.json
 # sem Playwright (só lê o HTML):
 node <skill>/scripts/audit-site.mjs https://site.com/ --static
+# entregando os disparos de verdade (sem click IDs falsos):
+node <skill>/scripts/audit-site.mjs https://site.com/ --live
 ```
+
+**Modo padrão (dry):** todos os disparos para as plataformas e os POSTs para o próprio domínio (relay) são registrados e **bloqueados**; nada chega à Meta, ao Google etc. Isso é obrigatório porque a auditoria usa click IDs inventados, e a Meta marca um `fbclid` que não emitiu como "modificado" no diagnóstico do dataset. **`--live`** deixa os disparos passarem e retira os click IDs falsos; use só para confirmar entrega, de preferência com código de teste.
 
 O que ele faz:
 
@@ -18,7 +22,7 @@ O que ele faz:
 5. Procura segredos no HTML e nos scripts carregados (token da Meta `EAA…`, token do Pinterest, `api_secret`, `access_token=`).
 6. Imprime os achados e o detalhe em Markdown; `--json` grava o relatório completo.
 
-Nada é enviado em formulários. Os disparos da auditoria são reais (PageView etc.) e aparecem nas plataformas com `utm_source=trk_audit`, fáceis de filtrar.
+Nada é enviado em formulários. No modo `--live`, os disparos são reais e aparecem nas plataformas com `utm_source=trk_audit`, fáceis de filtrar.
 
 ## Como ler
 

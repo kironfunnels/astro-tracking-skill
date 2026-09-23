@@ -118,7 +118,12 @@ function sendToServer(event: TrackedEvent) {
     click_ids: Object.fromEntries(CLICK_IDS.filter((id) => clicks[id]).map((id) => [id, clicks[id]])),
     test: testCodes(),
   });
-  fetch(tracking.endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body, keepalive: true, credentials: 'same-origin' }).catch(() => {});
+  // sendBeacon survives the navigation that usually follows a conversion (redirect to a thank-you page or
+  // WhatsApp). fetch keepalive alone was lost in in-app browsers (Instagram) on redirect. fetch is the fallback.
+  const queued = typeof navigator.sendBeacon === 'function' && navigator.sendBeacon(tracking.endpoint, new Blob([body], { type: 'application/json' }));
+  if (!queued) {
+    fetch(tracking.endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body, keepalive: true, credentials: 'same-origin' }).catch(() => {});
+  }
 }
 
 function deliver(event: TrackedEvent, targets: Iterable<BrowserPlatform>) {

@@ -3,8 +3,12 @@
 // exist, whether URL parameters survive navigation, which forms exist and whether any token is exposed.
 //
 // Usage (from the project root, so Playwright resolves from its node_modules):
-//   node <skill>/scripts/audit-site.mjs https://example.com/ [--pages 3] [--json report.json] [--wait 4000] [--static]
+//   node <skill>/scripts/audit-site.mjs https://example.com/ [--pages 3] [--json report.json] [--wait 4000] [--static] [--live]
 //
+// Default (dry) mode records every tracking hit and relay POST, then ABORTS it: nothing reaches Meta, Google,
+// TikTok etc. That matters because the audit uses invented click IDs, and Meta flags a fbclid it never issued
+// as "modified fbclid" in the dataset diagnostics. --live lets hits through and drops the fake click IDs
+// (use only to confirm delivery, preferably with a test event code).
 // Without Playwright installed (or with --static) it falls back to a static HTML scan, which only sees tags
 // written in the HTML, not what they send. Nothing is submitted: forms are listed, never filled.
 import { createRequire } from 'node:module';
@@ -18,12 +22,13 @@ const option = (name, fallback) => {
   return index >= 0 ? args[index + 1] : fallback;
 };
 if (!target) {
-  console.error('Uso: node audit-site.mjs <url> [--pages 3] [--json arquivo.json] [--wait 4000] [--static]');
+  console.error('Uso: node audit-site.mjs <url> [--pages 3] [--json arquivo.json] [--wait 4000] [--static] [--live]');
   process.exit(1);
 }
 const maxPages = Number(option('pages', 3));
 const waitMs = Number(option('wait', 4000));
 const jsonOut = option('json');
+const live = args.includes('--live');
 
 const TEST_PARAMS = {
   utm_source: 'trk_audit',
@@ -37,6 +42,11 @@ const TEST_PARAMS = {
   msclkid: '00000000000000000000000000000001',
   custom_param: 'trk_custom',
 };
+const CLICK_ID_KEYS = ['fbclid', 'gclid', 'ttclid', 'msclkid'];
+if (live) for (const key of CLICK_ID_KEYS) delete TEST_PARAMS[key];
+
+// Requests that deliver data to a platform (script loads are not here). Aborted in dry mode.
+const DELIVERY = /facebook\.com\/tr\/?(\?|$)|facebook\.com\/privacy_sandbox|graph\.facebook\.com|\/g\/collect|googleadservices\.com\/pagead|doubleclick\.net\/pagead|google\.com\/pagead\/1p-|google\.com\/ccm|analytics\.tiktok\.com\/api|ct\.pinterest\.com|bat\.bing\.com\/action|px\.ads\.linkedin\.com|clarity\.ms\/collect|business-api\.tiktok\.com|capi\.uet\.microsoft\.com/;
 
 // ---------- signatures ----------
 
@@ -142,8 +152,18 @@ async function browserAudit({ chromium }) {
   const consoleErrors = [];
   const scriptBodies = [];
   const origin = new URL(target).origin;
+  if (!live) {
+    await context.route('**/*', (route) => {
+      const request = route.request();
+      const sameOriginPost = request.method() === 'POST' && new URL(request.url()).origin === origin;
+      return DELIVERY.test(request.url()) || sameOriginPost ? route.abort() : route.continue();
+    });
+  }
 
-  page.on('console', (message) => { if (message.type() === 'error') consoleErrors.push(message.text().slice(0, 300)); });
+  page.on('console', (message) => {
+    // In dry mode the aborted deliveries show up as "Failed to load resource"; they are ours, not the site's.
+    if (message.type() === 'error' && !(!live && /ERR_FAILED|Failed to load resource/.test(message.text()))) consoleErrors.push(message.text().slice(0, 300));
+  });
   page.on('pageerror', (error) => consoleErrors.push(String(error).slice(0, 300)));
   page.on('request', (request) => {
     let url;
@@ -267,7 +287,7 @@ async function browserAudit({ chromium }) {
   for (const hit of hits) (byPlatform[hit.platform] ??= new Set()).add(hit.detail);
 
   return {
-    mode: 'browser',
+    mode: live ? 'browser (live: disparos entregues, sem click IDs falsos)' : 'browser (dry: disparos registrados e bloqueados)',
     url: landing,
     tagsInHtml: scanText(html, HTML_SIGNATURES),
     globals,
@@ -300,9 +320,9 @@ function findings(report) {
   if (pageViews.length > 1 && new Set(pageViews).size < pageViews.length) out.push('ATENÇÃO: PageView da Meta repetido na mesma página.');
   const withoutId = metaHits.filter((detail) => detail.includes('SEM eventID'));
   if (withoutId.length) out.push(`Eventos do Pixel sem eventID (${withoutId.join('; ')}): não há como deduplicar com a API de Conversões.`);
-  if (report.mode === 'browser') {
-    if (!report.cookies.some((cookie) => cookie.name === '_fbc') && metaHits.length) out.push('Chegou com fbclid e nenhum _fbc foi criado: a atribuição de clique da Meta se perde.');
-    if (report.hits?.GA4 && !report.cookies.some((cookie) => cookie.name.startsWith('_gcl_aw')) && report.hits['Google Ads']) out.push('Chegou com gclid e nenhum _gcl_aw foi criado (conferir consentimento/conversion linker).');
+  if (report.mode.startsWith('browser')) {
+    if (!live && !report.cookies.some((cookie) => cookie.name === '_fbc') && metaHits.length) out.push('Chegou com fbclid e nenhum _fbc foi criado: a atribuição de clique da Meta se perde.');
+    if (!live && report.hits?.GA4 && !report.cookies.some((cookie) => cookie.name.startsWith('_gcl_aw')) && report.hits['Google Ads']) out.push('Chegou com gclid e nenhum _gcl_aw foi criado (conferir consentimento/conversion linker).');
     const { internalLinks, fullyDecorated, navigation } = report.params;
     if (internalLinks && fullyDecorated < internalLinks) out.push(`Parâmetros: ${fullyDecorated}/${internalLinks} links internos carregam todos os parâmetros de teste.`);
     if (navigation.some((step) => step.links && !step.withParams)) out.push('Parâmetros se perdem na segunda página (não há persistência além da URL de entrada).');
@@ -319,7 +339,7 @@ function printMarkdown(report) {
     lines.push(`## ${title}`, '```json', JSON.stringify(value, null, 2), '```', '');
   };
   section('Tags no HTML', report.tagsInHtml);
-  if (report.mode === 'browser') {
+  if (report.mode.startsWith('browser')) {
     section('Objetos globais e contêineres', report.globals);
     section('Disparos observados na rede', report.hits);
     section('POSTs para o próprio domínio (relay/CAPI?)', report.firstPartyPosts);

@@ -47,6 +47,7 @@ O evento de conversão (Lead, CompleteRegistration, Purchase…) deve sair **qua
 - Espera a resposta; se for sucesso, dispara o evento e **segura a resposta** para o provedor por até `holdMs` (1,5 s) + 300 ms para os beacons saírem. Assim um redirecionamento imediato não corta os eventos.
 - Erro do provedor → nenhum evento.
 - Instale no mesmo componente do embed. Se o provedor guardar uma referência a `fetch` antes do seu script rodar (raro), carregue o wrapper antes do embed.
+- A cópia de servidor sai por `navigator.sendBeacon`: no navegador interno do Instagram, `fetch` com `keepalive` foi perdido no redirect em produção.
 - Provedores que usam `XMLHttpRequest` precisam de um wrapper equivalente para `XMLHttpRequest.prototype.send`.
 - Para campos `select`, mapeie o valor técnico para o rótulo legível quando isso for útil no relatório.
 

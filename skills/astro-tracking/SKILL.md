@@ -34,7 +34,7 @@ Siga as fases em ordem. Ao final de cada fase, mostre ao usuário o resultado re
    ```bash
    node <skill>/scripts/audit-site.mjs https://site.com/pagina/ --pages 3 --json reports/tracking-audit.json
    ```
-   Ela abre a página com UTMs e click IDs de teste, rola até o fim, segue links internos e relata: tags no HTML, disparos reais na rede (Pixel, GA4, Ads, TikTok, Pinterest, UET, LinkedIn, Clarity, Hotjar), POSTs para o próprio domínio (relay), cookies (`_fbp`, `_fbc`, `_gcl_aw`, `_ttp`, `_epik`, `_uetmsclkid`…), persistência de parâmetros, formulários, iframes, erros de console e **segredos expostos**. Detalhes e leitura do relatório: `references/audit.md`.
+   Por padrão ela registra e **bloqueia** todos os disparos (click IDs de teste nunca chegam às plataformas); `--live` entrega de verdade, sem click IDs falsos. Ela abre a página com UTMs e click IDs de teste, rola até o fim, segue links internos e relata: tags no HTML, disparos reais na rede (Pixel, GA4, Ads, TikTok, Pinterest, UET, LinkedIn, Clarity, Hotjar), POSTs para o próprio domínio (relay), cookies (`_fbp`, `_fbc`, `_gcl_aw`, `_ttp`, `_epik`, `_uetmsclkid`…), persistência de parâmetros, formulários, iframes, erros de console e **segredos expostos**. Detalhes e leitura do relatório: `references/audit.md`.
 2. Leia o código: `grep -rE "fbq|gtag|GTM-|ttq|pintrk|uetq|lintrk|dataLayer|graph.facebook"` fora de `node_modules`/`dist`.
 3. Se houver MCP da Meta ou do Google disponível, consulte a qualidade do dataset/eventos recebidos (EMQ, deduplicação). Caso contrário, peça um print do Gerenciador de Eventos.
 4. Entregue uma tabela: **plataforma | instalada? | como (GTM, inline, plugin) | eventos vistos | dedup | problemas**, seguida dos achados críticos (token exposto, evento em dobro, Lead que nunca dispara, parâmetros perdidos).
@@ -78,7 +78,8 @@ Siga `references/testing.md`. Resumo:
 
 - Meta: Gerenciador de Eventos → Eventos de teste, abra o site com `?trk_test_meta=TEST…`; cada evento deve aparecer como Navegador + Servidor **Desduplicado**, com o mesmo ID.
 - TikTok: `?trk_test_tiktok=TEST…` e aba Test Events. Pinterest: `?trk_test_pinterest=1`. GA4: DebugView. Google Ads: diagnóstico da tag e conversões otimizadas. Microsoft: UET Tag Helper.
-- Faça **uma conversão real controlada** por formulário/checkout antes de encerrar.
+- Faça **uma conversão real controlada** por formulário/checkout antes de encerrar, idealmente também pelo navegador interno do Instagram quando o tráfego vier de lá.
+- Se a campanha não mostrar conversões depois de 30 min, siga `references/troubleshooting.md`.
 - Rode de novo a auditoria no deploy novo e compare com a da Fase 1.
 
 ### Fase 7 — Entrega
@@ -97,6 +98,11 @@ Siga `references/testing.md`. Resumo:
 - **`fb.1` fixo no `_fbp`/`_fbc`** está errado em domínios `.com.br` (o índice é 2). O runtime calcula.
 - **`META_TEST_EVENT_CODE` global** desvia *todos* os eventos reais para o teste. Prefira o código por aba (`?trk_test_meta=`) e remova o secret de teste depois.
 - **Headless Chrome não dispara o Pixel da Meta** (user agent `HeadlessChrome` é descartado). A auditoria já troca o UA; ao escrever testes próprios contra o Pixel real, faça o mesmo.
+- **Cópia de servidor por `fetch` keepalive** some no redirect dentro do navegador do Instagram. O runtime usa `sendBeacon`.
+- **Pixel só aceita e-mail/telefone no primeiro `fbq('init')`.** Re-init e `setUserData` são ignorados; os dados da conversão chegam pela cópia de servidor, que é obrigatória.
+- **`fbclid` inventado em teste de produção** faz a Meta acusar "fbclid modificado". Nunca teste com click IDs falsos contra pixels reais.
+- **Domínio desconhecido enviando para o seu Pixel:** não confirme; use a lista de domínios permitidos em Permissões de tráfego.
+- **Snippet de terceiro no layout em build local** (GTM, pixel inline) envia de `127.0.0.1` para o dataset real.
 - **`MutationObserver` que escreve no DOM observado** entra em laço infinito; só escreva quando o valor mudar.
 - **iframe de outro domínio** não pode ser lido; use página de obrigado, webhook ou a integração de API do próprio provedor.
 
@@ -114,3 +120,6 @@ Siga `references/testing.md`. Resumo:
 | `references/forms.md` | Gatilhos de conversão por tipo de formulário |
 | `references/consent.md` | LGPD/GDPR, Consent Mode v2, CMP |
 | `references/testing.md` | Playwright, eventos de teste e checklist final |
+| `references/troubleshooting.md` | Campanha sem conversões: roteiro de diagnóstico, avisos do Gerenciador de Eventos, backfill |
+
+Scripts: `scripts/audit-site.mjs` (auditoria), `scripts/scan-secrets.mjs` (segredos no repositório), `scripts/backfill-meta.mjs` (recuperar conversões perdidas pela API de Conversões, até 7 dias).

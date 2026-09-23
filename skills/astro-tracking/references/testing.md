@@ -36,6 +36,12 @@ Headless Chrome é ignorado pelo Pixel real da Meta; se algum teste precisar do 
 
 `?trk_debug=1` escreve cada evento (nome, ID, dados) no console da aba.
 
+Regras para testar em produção:
+
+- **Nunca use `fbclid`/`gclid` inventados** contra os pixels reais: a Meta acusa "fbclid modificado" e o dado fica sujo. Use códigos de teste sem click ID, ou click IDs de cliques reais.
+- Builds locais (dev, Playwright, Lighthouse) não podem ter snippets de terceiros fora do runtime (GTM, pixel inline): eles disparam de `127.0.0.1` para o dataset real.
+- Conversões aparecem no Ads Manager com 15–30 min de atraso; não conclua nada antes disso.
+
 ## Checklist final
 
 - [ ] `npm run build` e testes de rastreamento passam.

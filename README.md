@@ -59,7 +59,8 @@ skills/astro-tracking/
 ├── references/                   # documentação por plataforma e tema (pt-BR, com links oficiais)
 ├── scripts/
 │   ├── audit-site.mjs            # auditoria do site publicado
-│   └── scan-secrets.mjs          # verificação de segredos antes do commit
+│   ├── scan-secrets.mjs          # verificação de segredos antes do commit
+│   └── backfill-meta.mjs         # recuperação de conversões perdidas (API de Conversões, até 7 dias)
 └── templates/                    # código copiado para o projeto Astro
     ├── src/tracking/             # runtime, catálogo, identidade/hash, parâmetros, plataformas, relay
     ├── src/components/Tracking.astro

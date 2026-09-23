@@ -18,6 +18,15 @@ Conferido em 2026-09. Antes de implementar, abra as páginas oficiais abaixo e c
 | Pixel | `src/tracking/platforms/meta.ts` | Carrega `fbevents.js`, `init` com correspondência avançada em hash, `track`/`trackCustom` com `{ eventID }` |
 | Cookies | `src/tracking/client.ts` (`ensureMetaCookies`) | Cria `_fbp` e `_fbc` antes do primeiro evento, no formato `fb.<índice>.<ms>.<valor>` |
 | Servidor | `src/tracking/server/meta.ts` | `POST https://graph.facebook.com/v26.0/<PIXEL_ID>/events` com o mesmo `event_id` |
+| Entrega ao relay | `src/tracking/client.ts` (`sendToServer`) | `navigator.sendBeacon` (sobrevive a redirect, inclusive no navegador do Instagram), `fetch` keepalive como reserva |
+
+## Correspondência avançada no navegador: só no primeiro `init`
+
+Verificado em produção: o Pixel só usa `em`/`ph` passados no **primeiro** `fbq('init')` da página. Um segundo `init`, `fbq('set', 'userData', …)` e `setUserData` são ignorados; o hit do Lead sai só com `external_id`. Por isso:
+
+- o runtime não tenta re-init; os hashes da conversão vão pela **cópia de servidor** com o mesmo `event_id` — ela é obrigatória para o EMQ da conversão;
+- depois de uma conversão, os hashes ficam salvos e entram no primeiro `init` das visitas seguintes;
+- na auditoria, o Lead que antecede um redirect costuma sair como POST multipart em `/tr/` (leia `ev`, `eid`, `ud[...]` no corpo).
 
 ## Regras oficiais que o código segue
 
@@ -51,11 +60,16 @@ Se o token vazar: gere outro no mesmo lugar, atualize o secret, faça novo deplo
 1. Gerenciador de Eventos → **Eventos de teste** → copie o código `TEST…`.
 2. Abra o site com `?trk_test_meta=TEST12345` (a aba guarda o código na sessão; só ela manda eventos de servidor como teste).
 3. Deve aparecer, para cada evento, uma linha **Navegador** e outra **Servidor – Desduplicado** com o mesmo ID. Abra o evento de servidor para ver as "chaves de dados do usuário" recebidas.
+4. **Nunca** teste em produção com `fbclid` inventado: a Meta passa a acusar "fbclid modificado" no dataset. Teste sem fbclid ou com o de um clique real.
 4. Só use o secret `META_TEST_EVENT_CODE` se não houver alternativa, e remova-o logo depois: ele desvia **todos** os eventos reais.
 
 ## Qualidade da correspondência (EMQ)
 
 Mais chaves = melhor correspondência. O relay já envia IP, user agent, `fbp`, `fbc`, `external_id` e cidade/estado/CEP/país derivados do IP pela Cloudflare. Para subir o EMQ: capture e-mail e telefone no momento da conversão (`track(..., { email, phone })`), e nome quando o formulário tiver.
+
+## Proteger o dataset
+
+Configurações do dataset → **Permissões de tráfego**: mantenha uma lista de domínios permitidos. Assim eventos enviados com o seu ID a partir de domínios de terceiros ou falsos são bloqueados. Nunca "confirme" um domínio desconhecido que apareça no aviso "Confirme o domínio que pertence a você". Diagnóstico completo em `troubleshooting.md`.
 
 ## Armadilhas
 

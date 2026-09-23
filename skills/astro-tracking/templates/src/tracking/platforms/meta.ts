@@ -35,9 +35,10 @@ export const meta: BrowserPlatform = {
     }
     window.fbq('init', tracking.meta.pixelId, matching(identity));
   },
-  identify(identity) {
-    window.fbq?.('init', tracking.meta.pixelId, matching(identity));
-  },
+  // No identify(): the Pixel only honors advanced matching (em/ph) from the FIRST fbq('init') of the page.
+  // A second init, fbq('set', 'userData') or setUserData are ignored (verified in production), so the email and
+  // phone of a conversion reach Meta through the server copy with the same event_id. The hashes stored after a
+  // conversion feed the first init on later visits.
   track({ name, standard, data, eventId }) {
     const overrides = tracking.meta.names as Record<string, string | false>;
     if (overrides[name] === false) return;
