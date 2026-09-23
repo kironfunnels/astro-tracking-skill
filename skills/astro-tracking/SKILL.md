@@ -76,7 +76,7 @@ Siga as fases em ordem. Ao final de cada fase, mostre ao usuário o resultado re
 
 Siga `references/testing.md`. Resumo:
 
-- Meta: Gerenciador de Eventos → Eventos de teste, abra o site com `?trk_test_meta=TEST…`; cada evento deve aparecer como Navegador + Servidor **Desduplicado**, com o mesmo ID.
+- Meta: Gerenciador de Eventos → Eventos de teste, abra o site com `?trk_test_meta=TEST…`; o PageView deve aparecer como Navegador + Servidor **Desduplicado**, com o mesmo ID. Para testar a **conversão** sem criar evento real de navegador, acrescente `&trk_browser_off=1`. Depois confira Amostras de atividades e as configurações do dataset (`references/troubleshooting.md`).
 - TikTok: `?trk_test_tiktok=TEST…` e aba Test Events. Pinterest: `?trk_test_pinterest=1`. GA4: DebugView. Google Ads: diagnóstico da tag e conversões otimizadas. Microsoft: UET Tag Helper.
 - Faça **uma conversão real controlada** por formulário/checkout antes de encerrar, idealmente também pelo navegador interno do Instagram quando o tráfego vier de lá.
 - Se a campanha não mostrar conversões depois de 30 min, siga `references/troubleshooting.md`.
@@ -100,6 +100,7 @@ Siga `references/testing.md`. Resumo:
 - **Headless Chrome não dispara o Pixel da Meta** (user agent `HeadlessChrome` é descartado). A auditoria já troca o UA; ao escrever testes próprios contra o Pixel real, faça o mesmo.
 - **Cópia de servidor por `fetch` keepalive** some no redirect dentro do navegador do Instagram. O runtime usa `sendBeacon`.
 - **Pixel só aceita e-mail/telefone no primeiro `fbq('init')`.** Re-init e `setUserData` são ignorados; os dados da conversão chegam pela cópia de servidor, que é obrigatória.
+- **`test_event_code` não cobre o Pixel do navegador.** Conversão de teste na página real vira evento real. Teste em produção com `?trk_test_meta=TEST…&trk_browser_off=1` (só o relay roda) ou abortando os hits dos pixels.
 - **`fbclid` inventado em teste de produção** faz a Meta acusar "fbclid modificado". Nunca teste com click IDs falsos contra pixels reais.
 - **Domínio desconhecido enviando para o seu Pixel:** não confirme; use a lista de domínios permitidos em Permissões de tráfego.
 - **Snippet de terceiro no layout em build local** (GTM, pixel inline) envia de `127.0.0.1` para o dataset real.

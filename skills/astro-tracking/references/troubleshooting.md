@@ -30,11 +30,27 @@ Roteiro usado num caso real: campanha otimizando por Lead mostrava 0 conversões
 - **"Envie mais parâmetros (e-mail no PageView)".** Só é possível para quem já converteu (hash salvo e usado no primeiro `init`). Não peça e-mail antes da conversão por causa disso.
 - **"Conecte conversas de apps de mensagem".** Irrelevante para landing page de captação.
 
-## 4. O que não é problema (não "corrija")
+## 4. Onde olhar no Gerenciador de Eventos
+
+- **Evento → Amostras de atividades:** melhor lugar para separar conversão real de teste. Mostra a fonte (Pixel ou API de Conversões), quantos parâmetros vieram e a URL (real traz `utm_source` da campanha; teste traz `trk_test_*`, `trk_audit` ou o parâmetro de teste do projeto). Se aparecerem conversões de teste como reais, veja `testing.md` (`trk_browser_off`).
+- **Aviso "Dados personalizados não estão sendo exibidos (`_removed_`)":** pode aparecer mesmo com a configuração básica desativada. A causa fica em Configurações → **Controles de dados → Gerencie o bloqueio de parâmetros**, que exige aceitar um termo antes de mostrar a lista. É decisão do cliente; o agente não aceita termos em nome dele.
+- **Evento → Qualidade da correspondência:** mostra a cobertura de cada chave. As sugestões só valem se o dado existir: `fn`/`ln` só se o formulário coletar nome; `ge`, `db` e login do Facebook raramente se aplicam a landing pages. Se o painel pedir `external_id` que o relay já envia, provavelmente refletiu um evento de teste sem ele. "Cobertura" e "Desduplicação" ficam como "seus dados ainda estão sendo analisados" nas primeiras horas de API de Conversões; não é erro.
+- **Diagnósticos → Detectados anteriormente / Ignorados:** confira também; vazios são o esperado.
+
+### Configurações do dataset a conferir
+
+- **Permissões de tráfego:** allowlist com os domínios de produção (LP, checkout, plataforma de pagamento e subdomínios).
+- **Correspondência avançada automática:** ativada, com todos os campos.
+- **Cookies próprios (first-party):** ativados.
+- **Eventos automáticos / eventos sugeridos por IA:** se ativados, confira "Adicionado por eventos automáticos". Um Lead criado ali, sem `event_id`, contaria em dobro com o Lead do código.
+- **"Rastrear eventos automaticamente sem código":** desativado quando o código já envia os eventos.
+- **Categoria do conjunto de dados:** coerente com o negócio; categorias sensíveis (saúde etc.) restringem parâmetros.
+
+## 5. O que não é problema (não "corrija")
 
 Campanha com pixel/evento corretos, EMQ alto (ex.: 9,3/10) e evento de servidor aparecendo como **Desduplicado** com o mesmo `event_id` no teste significam que a configuração está certa. Se ainda faltam conversões, a causa é entrega (itens 2 e 3), não configuração.
 
-## 5. Recuperar conversões perdidas (backfill)
+## 6. Recuperar conversões perdidas (backfill)
 
 A API de Conversões aceita eventos com até **7 dias** de atraso. Use `scripts/backfill-meta.mjs` com o export do provedor:
 

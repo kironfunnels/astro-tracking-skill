@@ -60,7 +60,8 @@ Se o token vazar: gere outro no mesmo lugar, atualize o secret, faça novo deplo
 1. Gerenciador de Eventos → **Eventos de teste** → copie o código `TEST…`.
 2. Abra o site com `?trk_test_meta=TEST12345` (a aba guarda o código na sessão; só ela manda eventos de servidor como teste).
 3. Deve aparecer, para cada evento, uma linha **Navegador** e outra **Servidor – Desduplicado** com o mesmo ID. Abra o evento de servidor para ver as "chaves de dados do usuário" recebidas.
-4. **Nunca** teste em produção com `fbclid` inventado: a Meta passa a acusar "fbclid modificado" no dataset. Teste sem fbclid ou com o de um clique real.
+4. **O código de teste não cobre o Pixel do navegador.** Uma conversão de teste feita na página real gera um evento **real** de navegador (visto em produção: Leads de teste contados como reais). Para testar conversões em produção, abra com `?trk_test_meta=TEST…&trk_browser_off=1`: nenhum pixel carrega e só a cópia de servidor sai, marcada como teste. Em testes automatizados contra produção, intercepte e aborte `facebook.com/tr` e os hits do Google.
+5. **Nunca** teste em produção com `fbclid` inventado: a Meta passa a acusar "fbclid modificado" no dataset. Teste sem fbclid ou com o de um clique real.
 4. Só use o secret `META_TEST_EVENT_CODE` se não houver alternativa, e remova-o logo depois: ele desvia **todos** os eventos reais.
 
 ## Qualidade da correspondência (EMQ)

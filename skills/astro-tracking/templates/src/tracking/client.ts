@@ -163,7 +163,9 @@ function grant() {
     if (microsoft.enabled()) microsoftConsent(true, 'update');
   }
   ensureMetaCookies();
-  platforms.forEach(loadPlatform);
+  // ?trk_browser_off=1 (per tab): no vendor tag loads, only the relay runs. test_event_code only covers the server
+  // copy, so this is the safe way to test conversions against production without real browser events.
+  if (session('trk_browser_off') !== '1') platforms.forEach(loadPlatform);
   const late = platforms.filter((platform) => !early.has(platform));
   for (const event of pending.splice(0)) {
     deliver(event, late);
