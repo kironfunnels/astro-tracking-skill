@@ -1,7 +1,7 @@
 // Pinterest tag. https://developers.pinterest.com/docs/track-conversions/track-conversions-in-the-api/
 // event_id is shared with the Conversions API for deduplication.
 import { tracking } from '../config';
-import { platformName, toPinterestTag } from '../events';
+import { pinterestNames, toPinterestTag } from '../events';
 import { loadScript, type BrowserPlatform } from './types';
 
 type Pintrk = ((...args: unknown[]) => void) & { queue: unknown[]; version: string };
@@ -34,7 +34,7 @@ export const pinterest: BrowserPlatform = {
   },
   track({ name, standard, data, eventId }) {
     if (!standard) return;
-    const eventName = platformName(name, 'pinterest', tracking.pinterest.names as Record<string, string | false>);
-    if (eventName) window.pintrk?.('track', eventName, { ...toPinterestTag(data), event_id: eventId });
+    const names = pinterestNames(name, tracking.pinterest.names);
+    if (names) window.pintrk?.('track', names[0], { ...toPinterestTag(data), event_id: eventId });
   },
 };

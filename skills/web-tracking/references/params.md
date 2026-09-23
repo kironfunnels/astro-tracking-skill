@@ -6,7 +6,7 @@ Objetivo: o visitante chega com `?utm_source=…&gclid=…&fbclid=…&qualquer=�
 
 1. **Captura** na entrada: guarda **todos** os parâmetros da URL em `localStorage` (`trk_params`) por 90 dias, como:
    - `first` (primeiro toque, não é sobrescrito até expirar);
-   - `last` (último toque: uma nova visita com parâmetros substitui o conjunto inteiro, para não misturar `utm_*` de campanhas diferentes);
+   - `last` (último toque: uma **nova chegada de campanha** substitui o conjunto inteiro, para não misturar `utm_*` de campanhas diferentes). Conta como nova chegada a URL com `utm_*` ou click ID, ou com qualquer parâmetro quando o visitante vem de fora do site. Navegação interna com `?page=2` ou `?sort=preco` não apaga a campanha;
    - `clicks` (cada click ID com o horário em que foi visto: `gclid`, `gbraid`, `wbraid`, `dclid`, `fbclid`, `ttclid`, `msclkid`, `li_fat_id`, `epik`, `twclid`, `ScCid`, `rdt_cid`).
 2. **Exclui** o que não deve viajar: parâmetros `trk_*` (controle), `_gl` (o gtag cuida), nomes que indicam dado pessoal (`email`, `phone`, `whats`, `cpf`, `nome`, `name`…) e qualquer valor com `@`. Dado pessoal em URL é enviado a todos os pixels e viola as políticas da Meta e do Google.
 3. **Decora links** internos (mesmo domínio registrável, inclusive subdomínios) e dos domínios em `tracking.decorateDomains`, acrescentando só os parâmetros que o link ainda não tem (o valor do próprio link vence). Âncoras da mesma página (`#secao`) ficam intactas; links relativos continuam relativos. Roda no carregamento, em mudanças do DOM e no clique (última garantia).

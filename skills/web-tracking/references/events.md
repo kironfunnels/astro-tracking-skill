@@ -5,20 +5,20 @@ Os nomes canônicos são os eventos padrão da Meta. `src/tracking/events.ts` tr
 | Canônico | GA4 | TikTok | Pinterest (tag / API) | Microsoft (ação) | Servidor |
 | --- | --- | --- | --- | --- | --- |
 | PageView | automático | `ttq.page()` | `page` | `pageLoad` automático | só Meta |
-| ViewContent | `view_item` | ViewContent | pagevisit / page_visit | view_item | sim |
-| Search | `search` | Search | search / search | search | sim |
-| AddToCart | `add_to_cart` | AddToCart | addtocart / add_to_cart | add_to_cart | sim |
-| AddToWishlist | `add_to_wishlist` | AddToWishlist | — | add_to_wishlist | sim |
-| InitiateCheckout | `begin_checkout` | InitiateCheckout | — | begin_checkout | sim |
-| AddPaymentInfo | `add_payment_info` | AddPaymentInfo | — | add_payment_info | sim |
-| Purchase | `purchase` | Purchase | checkout / checkout | purchase | sim |
-| Lead | `generate_lead` | SubmitForm | lead / lead | submit_lead_form | sim |
-| CompleteRegistration | `sign_up` | CompleteRegistration | signup / signup | sign_up | sim |
-| Contact | `contact` | Contact | — | contact | sim |
-| Schedule | `schedule` | Schedule | — | book_appointment | sim |
-| Subscribe | `subscribe` | Subscribe | — | subscribe | sim |
-| StartTrial | `start_trial` | StartTrial | — | start_trial | sim |
-| SubmitApplication | `submit_application` | SubmitApplication | — | submit_application | sim |
+| ViewContent | `view_item` | ViewContent | ViewContent / view_content | view_item | sim |
+| Search | `search` | Search | Search / search | search | sim |
+| AddToCart | `add_to_cart` | AddToCart | AddToCart / add_to_cart | add_to_cart | sim |
+| AddToWishlist | `add_to_wishlist` | AddToWishlist | AddToWishList / add_to_wishlist | add_to_wishlist | sim |
+| InitiateCheckout | `begin_checkout` | InitiateCheckout | InitiateCheckout / initiate_checkout | begin_checkout | sim |
+| AddPaymentInfo | `add_payment_info` | AddPaymentInfo | AddPaymentInfo / add_payment_info | add_payment_info | sim |
+| Purchase | `purchase` | Purchase | Checkout / checkout | purchase | sim |
+| Lead | `generate_lead` | SubmitForm | Lead / lead | submit_lead_form | sim |
+| CompleteRegistration | `sign_up` | CompleteRegistration | SignUp / signup | sign_up | sim |
+| Contact | `contact` | Contact | Contact / contact | contact | sim |
+| Schedule | `schedule` | Schedule | Schedule / schedule | book_appointment | sim |
+| Subscribe | `subscribe` | Subscribe | Subscribe / subscribe | subscribe | sim |
+| StartTrial | `start_trial` | StartTrial | StartTrial / start_trial | start_trial | sim |
+| SubmitApplication | `submit_application` | SubmitApplication | SubmitApplication / submit_application | submit_application | sim |
 
 No GA4, `contact`, `schedule`, `subscribe`, `start_trial` e `submit_application` não são eventos recomendados oficiais: funcionam como eventos personalizados. Marque como **evento-chave** no GA4 o que for conversão.
 
@@ -33,7 +33,7 @@ Renomear por plataforma: `tracking.<plataforma>.names = { Lead: 'NomeHistórico'
 Regras:
 
 - `Purchase` exige `value` + `currency` na Meta. Use o valor real cobrado.
-- `order_id` em compras: vira `transaction_id` no GA4/Ads e evita conversão duplicada no recarregamento.
+- `order_id` em compras: vira `transaction_id` no GA4/Ads **e** define um `event_id` determinístico (`Purchase-<order_id>`), então recarregar a página de confirmação ou repetir o envio é deduplicado em todas as plataformas. Para compras, prefira ainda disparar do backend que confirma o pagamento.
 - Não coloque dado pessoal em `content_name` ou em parâmetros livres.
 - Use `value` em Lead só se o cliente tiver um valor por lead acordado; não invente.
 

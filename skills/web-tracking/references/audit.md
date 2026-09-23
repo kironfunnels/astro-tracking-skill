@@ -11,7 +11,7 @@ node <skill>/scripts/audit-site.mjs https://site.com/ --static
 node <skill>/scripts/audit-site.mjs https://site.com/ --live
 ```
 
-**Modo padrão (dry):** todos os disparos para as plataformas e os POSTs para o próprio domínio (relay) são registrados e **bloqueados**; nada chega à Meta, ao Google etc. Isso é obrigatório porque a auditoria usa click IDs inventados, e a Meta marca um `fbclid` que não emitiu como "modificado" no diagnóstico do dataset. **`--live`** deixa os disparos passarem e retira os click IDs falsos; use só para confirmar entrega, de preferência com código de teste.
+**Modo padrão (dry):** todos os disparos para as plataformas e **todo POST/beacon** (inclusive para um relay em subdomínio) são registrados e **bloqueados**; nada chega à Meta, ao Google etc. Isso é obrigatório porque a auditoria usa click IDs inventados, e a Meta marca um `fbclid` que não emitiu como "modificado" no diagnóstico do dataset. **`--live`** deixa os disparos passarem e retira os click IDs falsos; use só para confirmar entrega, de preferência com código de teste.
 
 O que ele faz:
 

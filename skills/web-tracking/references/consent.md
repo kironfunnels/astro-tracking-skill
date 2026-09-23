@@ -9,7 +9,7 @@ Isto não é aconselhamento jurídico. A decisão de base legal e de banner é d
 | `'none'` | Tudo carrega no primeiro acesso. Comum em sites só para o Brasil que usam legítimo interesse e aviso de privacidade. |
 | `'opt-in'` | Google carrega com Consent Mode v2 **negado** (pings sem cookie); Microsoft UET recebe `consent default denied`; Meta, TikTok, Pinterest, LinkedIn e o relay **esperam**. Os eventos da página ficam na fila e saem quando o visitante aceita. A escolha fica em `localStorage` (`trk_consent`). |
 
-API: `window.tracking.consent(true)` ao aceitar, `window.tracking.consent(false)` ao recusar ou revogar (atualiza Google/Microsoft para negado, chama `fbq('consent','revoke')` e `ttq.revokeConsent()`, e para de entregar eventos às demais plataformas).
+API: `window.tracking.consent(true)` ao aceitar, `window.tracking.consent(false)` ao recusar ou revogar. Recusar atualiza Google/Microsoft para negado, chama `fbq('consent','revoke')` e `ttq.revokeConsent()`, para de entregar eventos às demais plataformas e **descarta a fila** de eventos anteriores (eles nunca são reenviados por uma aceitação posterior). Aceitar de novo chama `fbq('consent','grant')` e `ttq.grantConsent()` nas tags já instaladas. A fila antes da decisão tem teto de 100 eventos.
 
 ## Integração com CMP / banner
 

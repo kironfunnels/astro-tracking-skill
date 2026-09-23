@@ -18,7 +18,7 @@ Conferido em 2026-09.
 
 ## Normalização do Google (diferente da Meta)
 
-- E-mail: trim, minúsculas e **remoção dos pontos antes de `@gmail.com`/`@googlemail.com`**.
+- E-mail: trim e minúsculas; **só para `gmail.com`/`googlemail.com`**, remover os pontos e o sufixo `+...` da parte local (`Jane.Doe+Shopping@googlemail.com` → `janedoe@googlemail.com`). Outros domínios ficam como estão. Fonte: [normalização de conversões otimizadas](https://developers.google.com/google-ads/api/docs/conversions/upload-online).
 - Telefone: **E.164 com `+`** (ex.: `+5511999998888`) antes do hash.
 - Hash SHA-256 em hexadecimal. O runtime calcula `em_google` e `ph_e164` separadamente.
 

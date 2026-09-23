@@ -5,6 +5,7 @@
 import { tracking } from '../config';
 import { isStandardEvent, SERVER_DATA_KEYS, type EventData } from '../events';
 import { pickHashed, type HashedIdentity } from '../identity';
+import { sanitizeUrl } from '../params';
 import { sendMeta } from './meta';
 import { sendMicrosoft } from './microsoft';
 import { sendPinterest } from './pinterest';
@@ -100,15 +101,25 @@ function cleanCustomData(input: unknown): EventData {
     const value = source[key];
     if (typeof value === 'number' && Number.isFinite(value)) data[key] = value;
     else if (typeof value === 'string' && value.length <= 200) data[key] = value;
-    else if (key === 'content_ids' && Array.isArray(value)) data.content_ids = value.filter((id) => typeof id === 'string').slice(0, 50);
+    else if (key === 'content_ids' && Array.isArray(value)) data.content_ids = value.filter((id) => typeof id === 'string' && id.length <= 100 && !id.includes('@')).slice(0, 50);
     else if (key === 'contents' && Array.isArray(value)) {
       data.contents = value
-        .filter((item) => item && typeof item.id === 'string' && Number.isFinite(item.quantity))
+        .filter((item) => item && typeof item.id === 'string' && item.id.length <= 100 && !item.id.includes('@') && Number.isFinite(item.quantity))
         .slice(0, 50)
         .map((item) => ({ id: item.id, quantity: item.quantity, item_price: Number.isFinite(item.item_price) ? item.item_price : undefined }));
     }
   }
   return data as EventData;
+}
+
+function referrer(value: unknown) {
+  const raw = text(value, 2000);
+  if (!raw) return undefined;
+  try {
+    return /^https?:$/.test(new URL(raw).protocol) ? sanitizeUrl(raw) : undefined;
+  } catch {
+    return undefined;
+  }
 }
 
 /** Returns null for anything that is not a well-formed event from one of our own pages. */
@@ -137,8 +148,9 @@ export function validateEvent(input: unknown): RelayEvent | null {
   return {
     event_name: name,
     event_id: event.event_id,
-    event_source_url: source.toString(),
-    referrer_url: text(event.referrer_url, 2000),
+    // Sanitized again here: the browser is not trusted to have removed personal data from URLs.
+    event_source_url: sanitizeUrl(source.toString()),
+    referrer_url: referrer(event.referrer_url),
     custom_data: cleanCustomData(event.custom_data),
     user_data: pickHashed(event.user_data),
     visitor_id: typeof event.visitor_id === 'string' && /^[\w-]{8,64}$/.test(event.visitor_id) ? event.visitor_id : undefined,
@@ -147,10 +159,29 @@ export function validateEvent(input: unknown): RelayEvent | null {
   };
 }
 
+/** Pinterest events[].status/error_message/warning_message, Microsoft error.details (warnings), Meta messages, TikTok code. */
+export function hasIssues(body: string) {
+  let json: any; // eslint-disable-line @typescript-eslint/no-explicit-any
+  try {
+    json = JSON.parse(body);
+  } catch {
+    return false;
+  }
+  if (!json || typeof json !== 'object') return false;
+  if (Array.isArray(json.events) && json.events.some((event: any) => (event.status && event.status !== 'processed') || event.error_message || event.warning_message)) return true; // eslint-disable-line @typescript-eslint/no-explicit-any
+  if (json.error) return true;
+  if (Array.isArray(json.messages) && json.messages.length) return true;
+  if (typeof json.code === 'number' && json.code !== 0) return true;
+  return false;
+}
+
 async function post(platform: string, url: string, init: RequestInit) {
   try {
     const response = await fetch(url, { method: 'POST', ...init, headers: { 'Content-Type': 'application/json', ...init.headers } });
-    if (!response.ok) console.error(`[relay] ${platform} ${response.status}`, (await response.text()).slice(0, 1000));
+    const body = await response.text();
+    if (!response.ok) console.error(`[relay] ${platform} ${response.status}`, body.slice(0, 1000));
+    // HTTP 200 can still carry per-event errors or dropped fields; surface them instead of treating 200 as delivered.
+    else if (hasIssues(body)) console.warn(`[relay] ${platform} ${response.status} accepted with issues`, body.slice(0, 1000));
   } catch (error) {
     console.error(`[relay] ${platform} request failed`, error);
   }
@@ -201,8 +232,10 @@ export async function handleRelay(
     return new Response(null, { status: 204, headers: { ...headers, 'Access-Control-Allow-Methods': 'POST', 'Access-Control-Allow-Headers': 'Content-Type', 'Access-Control-Max-Age': '86400' } });
   }
   if (request.method !== 'POST') return new Response(null, { status: 405, headers: { ...headers, Allow: 'POST, OPTIONS' } });
+  // Reject large bodies before reading them; then measure the real byte size (Content-Length may be absent).
+  if (Number(request.headers.get('Content-Length') ?? 0) > 16_000) return empty(413);
   const body = await request.text();
-  if (body.length > 16_000) return empty(413);
+  if (new TextEncoder().encode(body).length > 16_000) return empty(413);
   let parsed: unknown;
   try {
     parsed = JSON.parse(body);

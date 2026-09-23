@@ -6,27 +6,27 @@
 interface PlatformNames {
   ga4: string | false;
   tiktok: string | false;
-  /** [pintrk tag event, Conversions API event_name] */
+  /** [pintrk tag event, Conversions API event_name], per Pinterest's "Name in Tag" / "Name in API" table */
   pinterest: [string, string] | false;
   microsoft: string | false;
 }
 
 export const EVENTS = {
   PageView: { ga4: false, tiktok: false, pinterest: false, microsoft: false }, // each tag records page views on load
-  ViewContent: { ga4: 'view_item', tiktok: 'ViewContent', pinterest: ['pagevisit', 'page_visit'], microsoft: 'view_item' },
-  Search: { ga4: 'search', tiktok: 'Search', pinterest: ['search', 'search'], microsoft: 'search' },
-  AddToCart: { ga4: 'add_to_cart', tiktok: 'AddToCart', pinterest: ['addtocart', 'add_to_cart'], microsoft: 'add_to_cart' },
-  AddToWishlist: { ga4: 'add_to_wishlist', tiktok: 'AddToWishlist', pinterest: false, microsoft: 'add_to_wishlist' },
-  InitiateCheckout: { ga4: 'begin_checkout', tiktok: 'InitiateCheckout', pinterest: false, microsoft: 'begin_checkout' },
-  AddPaymentInfo: { ga4: 'add_payment_info', tiktok: 'AddPaymentInfo', pinterest: false, microsoft: 'add_payment_info' },
-  Purchase: { ga4: 'purchase', tiktok: 'Purchase', pinterest: ['checkout', 'checkout'], microsoft: 'purchase' },
-  Lead: { ga4: 'generate_lead', tiktok: 'SubmitForm', pinterest: ['lead', 'lead'], microsoft: 'submit_lead_form' },
-  CompleteRegistration: { ga4: 'sign_up', tiktok: 'CompleteRegistration', pinterest: ['signup', 'signup'], microsoft: 'sign_up' },
-  Contact: { ga4: 'contact', tiktok: 'Contact', pinterest: false, microsoft: 'contact' },
-  Schedule: { ga4: 'schedule', tiktok: 'Schedule', pinterest: false, microsoft: 'book_appointment' },
-  Subscribe: { ga4: 'subscribe', tiktok: 'Subscribe', pinterest: false, microsoft: 'subscribe' },
-  StartTrial: { ga4: 'start_trial', tiktok: 'StartTrial', pinterest: false, microsoft: 'start_trial' },
-  SubmitApplication: { ga4: 'submit_application', tiktok: 'SubmitApplication', pinterest: false, microsoft: 'submit_application' },
+  ViewContent: { ga4: 'view_item', tiktok: 'ViewContent', pinterest: ['ViewContent', 'view_content'], microsoft: 'view_item' },
+  Search: { ga4: 'search', tiktok: 'Search', pinterest: ['Search', 'search'], microsoft: 'search' },
+  AddToCart: { ga4: 'add_to_cart', tiktok: 'AddToCart', pinterest: ['AddToCart', 'add_to_cart'], microsoft: 'add_to_cart' },
+  AddToWishlist: { ga4: 'add_to_wishlist', tiktok: 'AddToWishlist', pinterest: ['AddToWishList', 'add_to_wishlist'], microsoft: 'add_to_wishlist' },
+  InitiateCheckout: { ga4: 'begin_checkout', tiktok: 'InitiateCheckout', pinterest: ['InitiateCheckout', 'initiate_checkout'], microsoft: 'begin_checkout' },
+  AddPaymentInfo: { ga4: 'add_payment_info', tiktok: 'AddPaymentInfo', pinterest: ['AddPaymentInfo', 'add_payment_info'], microsoft: 'add_payment_info' },
+  Purchase: { ga4: 'purchase', tiktok: 'Purchase', pinterest: ['Checkout', 'checkout'], microsoft: 'purchase' },
+  Lead: { ga4: 'generate_lead', tiktok: 'SubmitForm', pinterest: ['Lead', 'lead'], microsoft: 'submit_lead_form' },
+  CompleteRegistration: { ga4: 'sign_up', tiktok: 'CompleteRegistration', pinterest: ['SignUp', 'signup'], microsoft: 'sign_up' },
+  Contact: { ga4: 'contact', tiktok: 'Contact', pinterest: ['Contact', 'contact'], microsoft: 'contact' },
+  Schedule: { ga4: 'schedule', tiktok: 'Schedule', pinterest: ['Schedule', 'schedule'], microsoft: 'book_appointment' },
+  Subscribe: { ga4: 'subscribe', tiktok: 'Subscribe', pinterest: ['Subscribe', 'subscribe'], microsoft: 'subscribe' },
+  StartTrial: { ga4: 'start_trial', tiktok: 'StartTrial', pinterest: ['StartTrial', 'start_trial'], microsoft: 'start_trial' },
+  SubmitApplication: { ga4: 'submit_application', tiktok: 'SubmitApplication', pinterest: ['SubmitApplication', 'submit_application'], microsoft: 'submit_application' },
 } satisfies Record<string, PlatformNames>;
 
 export type EventName = keyof typeof EVENTS;
@@ -69,10 +69,16 @@ export function platformName(
   return Array.isArray(mapped) ? mapped[0] : mapped;
 }
 
-export function pinterestServerName(name: string): string | false {
+/** Pinterest override: false, one name for tag and API (custom events), or [tag, api]. */
+export type PinterestName = string | false | [string, string];
+
+export function pinterestNames(name: string, overrides: Partial<Record<string, PinterestName>> = {}): [string, string] | false {
+  if (name in overrides) {
+    const value = overrides[name] ?? false;
+    return value === false ? false : Array.isArray(value) ? value : [value, value];
+  }
   if (!isStandardEvent(name)) return false;
-  const mapped = EVENTS[name].pinterest;
-  return mapped ? mapped[1] : false;
+  return EVENTS[name].pinterest;
 }
 
 /** GA4 recommended-event parameters. */

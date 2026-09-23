@@ -2,7 +2,8 @@
 // Every platform normalizes a little differently, so the browser hashes each variant once and
 // plaintext never leaves the page except inside the vendors' own pixels (which hash it themselves).
 //   Meta:      em trimmed+lowercase; ph digits with country code, no "+"; fn/ln/ct lowercase letters; st/country 2 letters.
-//   Google:    email lowercase, dots removed from gmail.com/googlemail.com local part; phone E.164 with "+".
+//   Google:    email lowercase; for gmail.com/googlemail.com only, dots and "+suffix" removed from the local part;
+//              phone E.164 with "+".
 //   TikTok:    email lowercase; phone E.164 with "+".
 //   Microsoft: email lowercase, dots and "+alias" removed from the local part (any domain); phone E.164 with "+".
 //   Pinterest: same rules as Meta.
@@ -58,7 +59,8 @@ function splitEmail(value: string) {
 export function normalizeEmailGoogle(value: string) {
   const parts = splitEmail(value);
   if (!parts) return normalizeEmail(value);
-  const local = parts.domain === 'gmail.com' || parts.domain === 'googlemail.com' ? parts.local.replace(/\./g, '') : parts.local;
+  const gmail = parts.domain === 'gmail.com' || parts.domain === 'googlemail.com';
+  const local = gmail ? parts.local.split('+')[0].replace(/\./g, '') : parts.local;
   return `${local}@${parts.domain}`;
 }
 

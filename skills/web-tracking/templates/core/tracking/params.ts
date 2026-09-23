@@ -55,7 +55,16 @@ export function captureParams(): ParamStore {
   for (const id of CLICK_IDS) if (store.clicks[id] && Date.now() - store.clicks[id]!.ts > MAX_AGE_MS) delete store.clicks[id];
 
   const incoming = persistable(new URLSearchParams(location.search));
-  if (Object.keys(incoming).length) {
+  // A new touch is a campaign arrival: utm_* or a click ID, or any parameter on an entry from outside the site.
+  // Internal navigation with ?page=2 or ?sort=price must not erase the campaign that brought the visitor.
+  const campaign = Object.keys(incoming).some((key) => key.startsWith('utm_') || (CLICK_IDS as readonly string[]).includes(key));
+  let external = true;
+  try {
+    external = !document.referrer || registrableDomain(new URL(document.referrer).hostname) !== registrableDomain();
+  } catch {
+    /* unparsable referrer: treat as external */
+  }
+  if (Object.keys(incoming).length && (campaign || external)) {
     const touch: Touch = { params: incoming, landing: location.origin + location.pathname, referrer: document.referrer, ts: Date.now() };
     store.first ??= touch;
     // A new campaign visit replaces the previous set as a whole (last-touch), so stale utm_* never mix with new ones.
@@ -70,16 +79,28 @@ export function captureParams(): ParamStore {
   return store;
 }
 
-/** URL without personal-data parameters or our trk_* control flags, for event_source_url and similar fields. */
+/** URL without personal-data parameters, e-mails in the path or our trk_* control flags, for event_source_url and
+ *  similar fields. Pure (no DOM), so the relay applies it again server-side. */
 export function sanitizeUrl(href: string) {
   try {
     const url = new URL(href);
     for (const [key, value] of [...url.searchParams]) {
       if (PERSONAL_NAME.test(key) || value.includes('@') || key.startsWith('trk_')) url.searchParams.delete(key);
     }
+    url.pathname = url.pathname.split('/').map((segment) => (decodeSafe(segment).includes('@') ? 'redacted' : segment)).join('/');
+    url.username = '';
+    url.password = '';
     return url.toString();
   } catch {
     return href;
+  }
+}
+
+function decodeSafe(value: string) {
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    return value;
   }
 }
 

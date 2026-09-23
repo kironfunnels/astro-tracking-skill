@@ -6,7 +6,8 @@ import { createHash } from 'node:crypto';
 import { expect, test, type Page } from '@playwright/test';
 import { tracking } from '../src/tracking/config';
 import { hashUser, normalizePhone } from '../src/tracking/identity';
-import { buildRequests, clientInfo, handleRelay, validateEvent, type RelayContext } from '../src/tracking/server/relay';
+import { pinterestNames } from '../src/tracking/events';
+import { buildRequests, clientInfo, handleRelay, hasIssues, validateEvent, type RelayContext } from '../src/tracking/server/relay';
 
 const PATH = process.env.TRACKING_TEST_PATH ?? '/';
 const sha = (value: string) => createHash('sha256').update(value).digest('hex');
@@ -35,7 +36,9 @@ test.describe('normalização e hash', () => {
   test('cada plataforma recebe a variante de e-mail que documenta', async () => {
     const hashed = await hashUser({ email: ' Jo.Ao+promo@Gmail.com ', phone: '11999998888' }, '55');
     expect(hashed.em).toBe(sha('jo.ao+promo@gmail.com'));
-    expect(hashed.em_google).toBe(sha('joao+promo@gmail.com'));
+    // Google: gmail.com/googlemail.com lose dots AND the +suffix; other domains keep both.
+    expect(hashed.em_google).toBe(sha('joao@gmail.com'));
+    expect((await hashUser({ email: 'Jo.Ao+x@empresa.com' })).em_google).toBe(sha('jo.ao+x@empresa.com'));
     expect(hashed.em_microsoft).toBe(sha('joao@gmail.com'));
     expect(hashed.ph).toBe(sha('5511999998888'));
     expect(hashed.ph_e164).toBe(sha('+5511999998888'));
@@ -76,6 +79,31 @@ test.describe('relay', () => {
       expect(meta).toBeUndefined();
     }
     expect(await buildRequests(event, context, {})).toEqual([]);
+  });
+
+  test('URLs e referrer são limpos de dado pessoal também no servidor', () => {
+    const event = validateEvent({
+      ...base,
+      event_source_url: `https://${host}/perfil/ana@example.com/?utm_source=x&email=ana@example.com&trk_test_meta=TEST123`,
+      referrer_url: 'javascript:alert(1)',
+      custom_data: { content_ids: ['sku-1', 'ana@example.com'] },
+    })!;
+    expect(event.event_source_url).toBe(`https://${host}/perfil/redacted/?utm_source=x`);
+    expect(event.referrer_url).toBeUndefined();
+    expect(event.custom_data.content_ids).toEqual(['sku-1']);
+  });
+
+  test('HTTP 200 com erro por evento é detectado', () => {
+    expect(hasIssues('{"num_events_received":1,"num_events_processed":1,"events":[{"status":"processed","error_message":null,"warning_message":null}]}')).toBe(false);
+    expect(hasIssues('{"num_events_received":2,"num_events_processed":1,"events":[{"status":"failed","error_message":"bad"}]}')).toBe(true);
+    expect(hasIssues('{"events_received":1,"messages":[],"fbtrace_id":"x"}')).toBe(false);
+    expect(hasIssues('{"code":0,"message":"OK"}')).toBe(false);
+  });
+
+  test('override do Pinterest vale para tag e API juntos', () => {
+    expect(pinterestNames('ViewContent', { ViewContent: ['PageVisit', 'page_visit'] })).toEqual(['PageVisit', 'page_visit']);
+    expect(pinterestNames('Lead', { Lead: false })).toBe(false);
+    expect(pinterestNames('Purchase')).toEqual(['Checkout', 'checkout']);
   });
 
   test('relay em subdomínio responde CORS só para origens permitidas', async () => {
@@ -147,6 +175,32 @@ test('navegação sem recarregar (SPA) envia novo PageView quando spa: true', as
   await page.evaluate(() => history.replaceState({}, '', '/rota-virtual/'));
   await page.waitForTimeout(300);
   expect(virtualViews()).toBe(1);
+});
+
+test('compra com order_id tem event_id estável (recarga não duplica)', async ({ page }) => {
+  test.skip(!tracking.endpoint, 'relay desativado');
+  const serverEvents = await stubVendors(page);
+  await page.goto(withParams(PATH, 'trk_enable=1'));
+  await page.waitForFunction(() => Boolean((window as any).tracking));
+  const ids = await page.evaluate(async () => [
+    await (window as any).tracking.track('Purchase', { value: 10, currency: 'BRL', order_id: 'A-100' }),
+    await (window as any).tracking.track('Purchase', { value: 10, currency: 'BRL', order_id: 'A-100' }),
+  ]);
+  expect(ids[0]).toBe('Purchase-A-100');
+  expect(ids[1]).toBe(ids[0]);
+  await expect.poll(() => serverEvents.filter((event) => event.event_name === 'Purchase').length).toBe(2);
+});
+
+test('navegação interna com ?page=2 não apaga a campanha', async ({ page }) => {
+  await stubVendors(page);
+  await page.goto(withParams(PATH, 'utm_source=camp&utm_campaign=c9'));
+  const internal = page.locator('a[href^="/"]:not([href^="//"])').first();
+  test.skip((await internal.count()) === 0, 'página sem link interno');
+  // Same-site referrer, no utm/click id: an internal query string.
+  await Promise.all([page.waitForURL(/page=2/, { waitUntil: 'load' }), page.evaluate(() => { location.href = '/?page=2'; })]);
+  await page.waitForFunction(() => Boolean((window as any).tracking));
+  const stored = await page.evaluate(() => JSON.parse(localStorage.getItem('trk_params') || '{}'));
+  expect(stored.last.params).toEqual({ utm_source: 'camp', utm_campaign: 'c9' });
 });
 
 test('sem ?trk_enable=1 nada é enviado em localhost', async ({ page }) => {

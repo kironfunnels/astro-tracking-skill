@@ -7,7 +7,8 @@ import type { ClickId, Sender } from './relay';
 /** Update when Meta releases a new Graph API version (changelog: developers.facebook.com/docs/graph-api/changelog). */
 export const META_GRAPH_VERSION = 'v26.0';
 
-/** _fbc cookie, or built from the stored fbclid with the time it was first seen, as Meta documents. */
+/** _fbc cookie, or built from the stored fbclid with the time it was first seen. Meta's fbp/fbc page says to use
+ *  subdomainIndex 1 when the server builds the value without a cookie, hence the fixed "fb.1". */
 export function resolveFbc(cookies: Record<string, string>, fbclid?: ClickId) {
   if (cookies._fbc) return cookies._fbc;
   return fbclid ? `fb.1.${fbclid.ts}.${fbclid.value}` : undefined;
@@ -61,7 +62,8 @@ export const sendMeta: Sender = async (event, context, env) => {
   if (testCode) payload.test_event_code = testCode;
 
   return {
-    url: `https://graph.facebook.com/${META_GRAPH_VERSION}/${tracking.meta.pixelId}/events?access_token=${encodeURIComponent(env.META_CAPI_TOKEN)}`,
-    init: { body: JSON.stringify(payload) },
+    // Token in the body, not the URL, so it never shows up in request logs or traces.
+    url: `https://graph.facebook.com/${META_GRAPH_VERSION}/${tracking.meta.pixelId}/events`,
+    init: { body: JSON.stringify({ ...payload, access_token: env.META_CAPI_TOKEN }) },
   };
 };

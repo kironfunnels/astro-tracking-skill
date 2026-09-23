@@ -36,6 +36,8 @@ const pending: TrackedEvent[] = [];
 let identity: HashedIdentity = {};
 let visitorId = '';
 let granted = false;
+/** Explicit refusal: nothing is queued until the visitor accepts again. */
+let refused = false;
 const debug = () => session('trk_debug') === '1';
 
 // ---------- small helpers ----------
@@ -142,7 +144,8 @@ function dispatch(event: TrackedEvent) {
   // Before consent only tags loaded in consent mode (Google) receive the event; the rest waits in `pending`.
   deliver(event, active);
   if (granted) sendToServer(event);
-  else pending.push(event);
+  // Only while undecided, and bounded: a page that never gets a decision must not grow memory without limit.
+  else if (!refused && pending.length < 100) pending.push(event);
 }
 
 function loadPlatform(platform: BrowserPlatform) {
@@ -158,10 +161,16 @@ function loadPlatform(platform: BrowserPlatform) {
 function grant() {
   if (granted) return;
   granted = true;
+  refused = false;
   const early = new Set(active);
   if (tracking.consent === 'opt-in') {
     googleConsentUpdate(true);
     if (microsoft.enabled()) microsoftConsent(true, 'update');
+  }
+  // Tags installed before a revocation stay revoked until told otherwise.
+  if (installed.size) {
+    window.fbq?.('consent', 'grant');
+    window.ttq?.grantConsent?.();
   }
   ensureMetaCookies();
   // ?trk_browser_off=1 (per tab): no vendor tag loads, only the relay runs. test_event_code only covers the server
@@ -186,7 +195,9 @@ export async function identify(user: UserInput) {
 
 export async function track(name: string, data: EventData = {}, user?: UserInput): Promise<string> {
   if (user) await identify(user);
-  const eventId = uuid();
+  // Orders get a deterministic id, so a reload of the confirmation page or a retry is deduplicated by every platform.
+  const orderId = typeof data.order_id === 'string' || typeof data.order_id === 'number' ? String(data.order_id).replace(/[^\w-]/g, '').slice(0, 40) : '';
+  const eventId = orderId ? `${name}-${orderId}`.slice(0, 64) : uuid();
   dispatch({ name, standard: isStandardEvent(name), data, eventId, identity });
   return eventId;
 }
@@ -201,7 +212,10 @@ export function consent(value: boolean) {
   window.fbq?.('consent', 'revoke');
   window.ttq?.revokeConsent?.();
   for (const platform of [...active]) if (platform !== google) active.delete(platform);
+  // Events queued before an explicit refusal are never replayed by a later acceptance.
+  pending.length = 0;
   granted = false;
+  refused = true;
 }
 
 // ---------- declarative bindings ----------
@@ -337,6 +351,7 @@ async function start() {
   bindDeclarative();
 
   const stored = storage(CONSENT_KEY);
+  refused = stored === 'denied';
   if (tracking.consent === 'opt-in') {
     // Advanced consent mode: Google loads with everything denied and sends cookieless pings until consent.
     googleConsentDefault(false);

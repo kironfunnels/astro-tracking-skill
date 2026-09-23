@@ -32,6 +32,19 @@ function whenTrackingReady(): Promise<Api> {
   });
 }
 
+async function requestBody(input: RequestInfo | URL, init?: RequestInit) {
+  if (init?.body !== undefined && init.body !== null) return parseBody(init.body);
+  // fetch(new Request(url, { body })) carries the body inside the Request.
+  if (input instanceof Request) {
+    try {
+      return parseBody(await input.clone().text());
+    } catch {
+      return null;
+    }
+  }
+  return null;
+}
+
 function parseBody(body: BodyInit | null | undefined): Record<string, unknown> | null {
   if (typeof body === 'string') {
     try {
@@ -53,11 +66,15 @@ export function captureFormSubmissions(options: FormCaptureOptions) {
   window.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
     const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
     const method = (init?.method ?? (input instanceof Request ? input.method : 'GET')).toUpperCase();
+    // A /g or /y regex keeps state between test() calls; reset it so every request is judged alone.
+    options.match.lastIndex = 0;
+    const matches = method === 'POST' && options.match.test(url);
+    const bodyPromise = matches ? requestBody(input, init) : null; // read before the Request body is consumed
     const response = await original(input, init);
-    if (method !== 'POST' || !options.match.test(url)) return response;
+    if (!matches) return response;
 
     try {
-      const body = parseBody(init?.body);
+      const body = await bodyPromise;
       let json: Record<string, unknown> | null = null;
       try {
         json = await response.clone().json();

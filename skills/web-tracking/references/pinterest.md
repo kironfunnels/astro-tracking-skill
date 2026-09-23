@@ -16,18 +16,22 @@ Conferido em 2026-09.
 
 ## Nomes de eventos
 
-A tag e a API usam grafias diferentes; o catálogo guarda os dois:
+A tag e a API usam grafias diferentes (tabela "Name in Tag" / "Name in API" do guia oficial, conferida em 2026-09). O catálogo guarda os dois:
 
 | Canônico | Tag (`pintrk`) | API (`event_name`) |
 | --- | --- | --- |
-| ViewContent | `pagevisit` | `page_visit` |
-| Search | `search` | `search` |
-| AddToCart | `addtocart` | `add_to_cart` |
-| Purchase | `checkout` | `checkout` |
-| Lead | `lead` | `lead` |
-| CompleteRegistration | `signup` | `signup` |
+| ViewContent | `ViewContent` | `view_content` |
+| Search | `Search` | `search` |
+| AddToCart | `AddToCart` | `add_to_cart` |
+| AddToWishlist | `AddToWishList` | `add_to_wishlist` |
+| InitiateCheckout | `InitiateCheckout` | `initiate_checkout` |
+| AddPaymentInfo | `AddPaymentInfo` | `add_payment_info` |
+| Purchase | `Checkout` | `checkout` |
+| Lead | `Lead` | `lead` |
+| CompleteRegistration | `SignUp` | `signup` |
+| Contact, Schedule, Subscribe, StartTrial, SubmitApplication | `Contact`, `Schedule`, `Subscribe`, `StartTrial`, `SubmitApplication` | `contact`, `schedule`, `subscribe`, `start_trial`, `submit_application` |
 
-Eventos sem equivalente não vão ao Pinterest. `PageView` usa `pintrk('page')` e não vai ao servidor.
+Também existem `PageVisit`/`page_visit`, `ViewCategory`/`view_category`, `WatchVideo`/`watch_video`, `CustomizeProduct` e `FindLocation`: use via `tracking.pinterest.names` (ex.: `{ ViewContent: ['PageVisit', 'page_visit'] }` para manter um nome histórico). O override vale para tag **e** API juntos, para não quebrar a deduplicação. `PageView` usa `pintrk('page')` e não vai ao servidor.
 
 ## Token
 

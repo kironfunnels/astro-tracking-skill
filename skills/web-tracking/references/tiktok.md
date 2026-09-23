@@ -29,7 +29,7 @@ Conferido em 2026-09. O portal de docs do TikTok carrega por JavaScript; se uma 
 ```
 
 - `PageView` **não** vai ao servidor: `ttq.page()` não aceita `event_id`, então não haveria deduplicação.
-- Deduplicação: mesmo `event_source_id` + evento + `event_id`; o TikTok fica com o primeiro e descarta os repetidos por 48 h.
+- Deduplicação ([ajuda oficial](https://ads.tiktok.com/help/article/event-deduplication?lang=en)): Pixel e Events API com o mesmo `event` e `event_id` são mesclados quando o segundo chega **depois de 5 minutos e dentro de 48 horas** do primeiro; o primeiro recebido é o que conta. Na validação, espere alguns minutos antes de concluir que a deduplicação falhou.
 
 ## Eventos padrão
 

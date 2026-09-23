@@ -184,8 +184,10 @@ async function browserAudit({ chromium }) {
   if (!live) {
     await context.route('**/*', (route) => {
       const request = route.request();
-      const sameOriginPost = request.method() === 'POST' && new URL(request.url()).origin === origin;
-      return DELIVERY.test(request.url()) || sameOriginPost ? route.abort() : route.continue();
+      // Every POST/beacon is blocked, wherever it goes (same origin, a relay on a subdomain, any vendor): the audit
+      // never submits forms, so a POST during it is always tracking delivery.
+      const post = request.method() !== 'GET' && request.method() !== 'HEAD';
+      return DELIVERY.test(request.url()) || post ? route.abort() : route.continue();
     });
   }
 
@@ -216,8 +218,8 @@ async function browserAudit({ chromium }) {
       }
       for (const params of hitParams) hits.push({ platform: name, detail: describe(params, url), page: page.url(), method: request.method() });
     }
-    if (url.origin === origin && request.method() === 'POST') {
-      postsToSameSite.push({ path: url.pathname, body: (request.postData() ?? '').slice(0, 400) });
+    if (request.method() === 'POST' && !DELIVERY.test(request.url())) {
+      postsToSameSite.push({ url: url.origin === origin ? url.pathname : url.origin + url.pathname, body: (request.postData() ?? '').slice(0, 400) });
     }
   });
   page.on('response', async (response) => {
@@ -375,7 +377,7 @@ function printMarkdown(report) {
   if (report.mode.startsWith('browser')) {
     section('Objetos globais e contêineres', report.globals);
     section('Disparos observados na rede', report.hits);
-    section('POSTs para o próprio domínio (relay/CAPI?)', report.firstPartyPosts);
+    section('POSTs fora dos fornecedores conhecidos (relay próprio?)', report.firstPartyPosts);
     section('Cookies de rastreamento', report.cookies);
     section('Persistência de parâmetros', report.params);
     section('Formulários', report.forms);

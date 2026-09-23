@@ -19,7 +19,7 @@ Conferido em 2026-09.
 - Deduplicação: mesmo tag ID + `eventName` + `eventId` no UET e na CAPI.
 - `msclkid`: UUID; guarde o mais recente por 90 dias e sobrescreva quando chegar um novo (a persistência de parâmetros faz isso).
 - E-mail: trim, **remover todos os pontos da parte local e o `+alias`**, minúsculas, SHA-256 (o runtime calcula `em_microsoft`). Telefone: E.164 com `+`, SHA-256.
-- `anonymousId` deve casar com o `vid` do pixel de ID Sync se ele for usado (remarketing dinâmico); o template envia o ID de visitante próprio (`trk_vid`).
+- `anonymousId`: o template envia o ID de visitante próprio (`trk_vid`). A Microsoft diz que ele **deve casar com o `vid` do pixel de ID Sync** para ligar o visitante às identidades da Microsoft, e o template **não instala o ID Sync**. Sem ele, a CAPI funciona para conversões (com `msclkid`, e-mail e telefone em hash), mas públicos e remarketing dinâmico a partir de eventos de servidor não funcionam. Para isso, instale o pixel de ID Sync (`https://c.bing.com/c.gif` com `Red3=BACID_<CID>` e `vid` igual ao `trk_vid`) conforme a documentação.
 
 ## Token
 

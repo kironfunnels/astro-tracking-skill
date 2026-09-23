@@ -63,6 +63,14 @@ No Claude Code, sugira que o usuário rode o comando com o prefixo `!` para o to
 - Workers: `npx wrangler tail` ou painel → **Logs**.
 - O relay registra `[relay] <plataforma> <status> <resposta>` para cada erro das APIs (token inválido, campo rejeitado).
 
+## Modelo de ameaça do relay
+
+Um relay chamado pelo navegador é público por natureza: qualquer cliente HTTP pode montar um POST com `Origin` e `event_source_url` válidos. Nenhuma autenticação impede isso sem um backend que confirme cada evento. O relay garante: só eventos do catálogo, só dados de usuário em SHA-256, URLs e referrer sanitizados de novo no servidor, limites de tamanho e origem conferida quando o navegador a envia. Ele **não** garante que o evento aconteceu nem que o consentimento declarado pela página é verdadeiro. Por isso:
+
+- **conversões de valor** (compra, assinatura, lead qualificado) devem sair do backend que confirma a transação, com `event_id` estável (ex.: derivado do pedido);
+- use **rate limiting** no caminho do relay (abaixo) e acompanhe picos no Gerenciador de Eventos;
+- a Meta tem Permissões de tráfego (lista de domínios) para o Pixel, mas a API de Conversões aceita qualquer chamada com o token, que por isso nunca pode vazar.
+
 ## Custos e proteção
 
 - Cada evento relayado é uma invocação. No plano Workers Free (que o Pages Functions compartilha), o limite diário de requisições é baixo para sites de muito tráfego. Opções: plano pago do Workers, ou `tracking.browserOnlyEvents: ['PageView']` para manter só as conversões no servidor.

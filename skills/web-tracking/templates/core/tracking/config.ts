@@ -33,7 +33,8 @@ export const tracking = {
   /** Only when the client insists on keeping a GTM container. Do not configure the same pixel in GTM and here. */
   gtm: { containerId: '' },
   tiktok: { pixelId: '', names: {} as Partial<Record<EventName, string | false>> },
-  pinterest: { tagId: '', adAccountId: '', names: {} as Partial<Record<EventName, string | false>> },
+  /** names: false, a custom name used by tag and API, or [tagName, apiName]; both sides must change together. */
+  pinterest: { tagId: '', adAccountId: '', names: {} as Partial<Record<EventName, string | false | [string, string]>> },
   microsoft: { uetTagId: '', names: {} as Partial<Record<EventName, string | false>> },
   /** conversions maps a canonical event to the numeric conversion_id created in Campaign Manager. */
   linkedin: { partnerId: '', conversions: {} as Partial<Record<EventName, number>> },

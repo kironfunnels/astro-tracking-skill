@@ -1,15 +1,16 @@
 // Pinterest Conversions API (v5). https://developers.pinterest.com/docs/track-conversions/track-conversions-in-the-api/
 // Deduplicates with the Pinterest tag through event_name + event_id (48 h window).
 import { tracking } from '../config';
-import { pinterestServerName } from '../events';
+import { pinterestNames } from '../events';
 import type { Sender } from './relay';
 
 export const sendPinterest: Sender = async (event, context, env) => {
   const { tagId, adAccountId } = tracking.pinterest;
   if (!tagId || !adAccountId || !env.PINTEREST_CONVERSIONS_TOKEN) return null;
-  if ((tracking.pinterest.names as Record<string, string | false>)[event.event_name] === false) return null;
-  const name = pinterestServerName(event.event_name);
-  if (!name) return null;
+  // Same override as the tag, so both channels carry the same event for deduplication.
+  const names = pinterestNames(event.event_name, tracking.pinterest.names);
+  if (!names) return null;
+  const name = names[1];
 
   const user = event.user_data;
   const userData: Record<string, unknown> = {
