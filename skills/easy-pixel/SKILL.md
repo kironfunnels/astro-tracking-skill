@@ -1,5 +1,5 @@
 ---
-name: web-tracking
+name: easy-pixel
 description: Audita, instala e mantém rastreamento de conversões direto no código de sites e apps web, sem depender do Google Tag Manager, identificando a stack (Astro, Next.js, Nuxt, SvelteKit, SPA Vite/React/Vue, Remix, HTML estático, WordPress/Elementor, Webflow, Shopify, Laravel etc.) e o host (Cloudflare, Vercel, Netlify, servidor próprio) para orientar a instalação certa. Cobre Meta Pixel + API de Conversões, GA4, Google Ads (conversões otimizadas), TikTok Pixel + Events API, Pinterest, Microsoft UET e LinkedIn, com event_id compartilhado para deduplicação, relay de servidor com tokens só como secrets, persistência de UTMs e click IDs entre páginas, captura confiável de formulários, auditoria do site publicado, recuperação de conversões e testes Playwright. Use quando pedirem para instalar ou revisar pixel, CAPI, GA4, gtag, Google Ads, TikTok, conversões ou eventos, tirar o GTM, conferir se UTMs/fbclid/gclid chegam às próximas páginas, investigar campanha sem conversões ou auditar o rastreamento de um site.
 ---
 

@@ -1,4 +1,4 @@
-# web-tracking — skill de rastreamento direto para sites e apps web
+# easy-pixel — skill de rastreamento direto para sites e apps web
 
 Skill para agentes de código (Claude Code e compatíveis) que audita, instala e mantém o rastreamento de conversões **direto no código**, sem depender do Google Tag Manager. Ela identifica a stack do site e o host e orienta a instalação certa para cada caso.
 
@@ -18,18 +18,18 @@ O núcleo veio de uma implementação em produção. Foi testado com Astro 7, co
 ### Claude Code (plugin)
 
 ```text
-/plugin marketplace add kironfunnels/web-tracking-skill
-/plugin install web-tracking@kironfunnels-tracking
+/plugin marketplace add kironfunnels/easy-pixel
+/plugin install easy-pixel@kironfunnels-tracking
 ```
 
 ### Cópia manual (qualquer agente que leia skills)
 
 ```bash
-git clone https://github.com/kironfunnels/web-tracking-skill.git
+git clone https://github.com/kironfunnels/easy-pixel.git
 # para um projeto:
-cp -r web-tracking-skill/skills/web-tracking <projeto>/.claude/skills/
+cp -r easy-pixel/skills/easy-pixel <projeto>/.claude/skills/
 # ou para todos os projetos do usuário:
-cp -r web-tracking-skill/skills/web-tracking ~/.claude/skills/
+cp -r easy-pixel/skills/easy-pixel ~/.claude/skills/
 ```
 
 Agentes que usam `.agents/skills/` (Codex e outros) funcionam com a mesma pasta.
@@ -49,15 +49,15 @@ O agente segue o fluxo do `SKILL.md`: contexto e stack → diagnóstico → plan
 Os scripts também rodam sozinhos:
 
 ```bash
-node skills/web-tracking/scripts/detect-stack.mjs ./meu-projeto
-node skills/web-tracking/scripts/audit-site.mjs https://meusite.com.br/ --pages 3    # precisa de Playwright
-node skills/web-tracking/scripts/scan-secrets.mjs                                   # tokens no que o git publicaria
+node skills/easy-pixel/scripts/detect-stack.mjs ./meu-projeto
+node skills/easy-pixel/scripts/audit-site.mjs https://meusite.com.br/ --pages 3    # precisa de Playwright
+node skills/easy-pixel/scripts/scan-secrets.mjs                                   # tokens no que o git publicaria
 ```
 
 ## Estrutura
 
 ```
-skills/web-tracking/
+skills/easy-pixel/
 ├── SKILL.md                      # fluxo e regras
 ├── references/                   # documentação por plataforma, stack e tema (pt-BR, com links oficiais)
 ├── scripts/

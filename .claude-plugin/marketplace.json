@@ -3,7 +3,7 @@
   "owner": { "name": "Kiron Funnels" },
   "plugins": [
     {
-      "name": "web-tracking",
+      "name": "easy-pixel",
       "source": "./",
       "description": "Audita, instala e mantém rastreamento direto (sem GTM) em sites de qualquer stack: Meta, Google, TikTok, Pinterest, Microsoft e LinkedIn, com relay de servidor e persistência de parâmetros.",
       "version": "2.0.0"

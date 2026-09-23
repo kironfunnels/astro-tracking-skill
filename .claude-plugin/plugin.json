@@ -1,9 +1,9 @@
 {
-  "name": "web-tracking",
+  "name": "easy-pixel",
   "version": "2.0.0",
   "description": "Rastreamento de conversões direto no código de sites e apps web, sem GTM, com detecção de stack (Astro, Next.js, Nuxt, SvelteKit, SPA, HTML/WordPress...): Meta Pixel + CAPI, GA4, Google Ads, TikTok, Pinterest, Microsoft UET e LinkedIn, relay de servidor, persistência de UTMs/click IDs, auditoria e testes.",
   "author": { "name": "Kiron Funnels" },
-  "repository": "https://github.com/kironfunnels/web-tracking-skill",
+  "repository": "https://github.com/kironfunnels/easy-pixel",
   "license": "MIT",
   "keywords": ["tracking", "meta-pixel", "conversions-api", "ga4", "google-ads", "tiktok", "astro", "nextjs", "nuxt", "sveltekit", "wordpress", "cloudflare", "vercel", "netlify", "utm"]
 }
