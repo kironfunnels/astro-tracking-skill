@@ -1,9 +1,9 @@
 {
-  "name": "astro-tracking",
-  "version": "1.0.0",
-  "description": "Rastreamento de conversões direto no código de sites Astro, sem GTM: Meta Pixel + CAPI, GA4, Google Ads, TikTok, Pinterest, Microsoft UET e LinkedIn, com relay na Cloudflare, persistência de UTMs/click IDs, auditoria e testes.",
+  "name": "web-tracking",
+  "version": "2.0.0",
+  "description": "Rastreamento de conversões direto no código de sites e apps web, sem GTM, com detecção de stack (Astro, Next.js, Nuxt, SvelteKit, SPA, HTML/WordPress...): Meta Pixel + CAPI, GA4, Google Ads, TikTok, Pinterest, Microsoft UET e LinkedIn, relay de servidor, persistência de UTMs/click IDs, auditoria e testes.",
   "author": { "name": "Kiron Funnels" },
-  "repository": "https://github.com/kironfunnels/astro-tracking-skill",
+  "repository": "https://github.com/kironfunnels/web-tracking-skill",
   "license": "MIT",
-  "keywords": ["astro", "tracking", "meta-pixel", "conversions-api", "ga4", "google-ads", "tiktok", "cloudflare", "utm"]
+  "keywords": ["tracking", "meta-pixel", "conversions-api", "ga4", "google-ads", "tiktok", "astro", "nextjs", "nuxt", "sveltekit", "wordpress", "cloudflare", "vercel", "netlify", "utm"]
 }

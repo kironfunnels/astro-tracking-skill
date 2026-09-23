@@ -3,10 +3,10 @@
   "owner": { "name": "Kiron Funnels" },
   "plugins": [
     {
-      "name": "astro-tracking",
+      "name": "web-tracking",
       "source": "./",
-      "description": "Audita, instala e mantém rastreamento direto (sem GTM) em sites Astro: Meta, Google, TikTok, Pinterest, Microsoft e LinkedIn, com relay na Cloudflare e persistência de parâmetros.",
-      "version": "1.0.0"
+      "description": "Audita, instala e mantém rastreamento direto (sem GTM) em sites de qualquer stack: Meta, Google, TikTok, Pinterest, Microsoft e LinkedIn, com relay de servidor e persistência de parâmetros.",
+      "version": "2.0.0"
     }
   ]
 }

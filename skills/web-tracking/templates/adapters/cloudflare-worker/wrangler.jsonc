@@ -1,0 +1,13 @@
+{
+  // Standalone tracking relay. Pick ONE of the two routing options below and delete the other.
+  "name": "tracking-relay",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-09-01",
+  "routes": [
+    // Option A: same host as the site (the zone must be on Cloudflare and proxied).
+    { "pattern": "example.com/api/events*", "zone_name": "example.com" }
+    // Option B: dedicated subdomain (Cloudflare creates the DNS record).
+    // { "pattern": "track.example.com", "custom_domain": true }
+  ],
+  "observability": { "enabled": true }
+}

@@ -1,0 +1,10 @@
+# Local secrets for Cloudflare local dev (`npx wrangler pages dev`, `wrangler dev`, framework dev with the Cloudflare adapter).
+# Other hosts: use their local env mechanism (vercel env pull, netlify dev), never a committed file.
+# Copy to .dev.vars (never commit it; .dev.vars* must be in .gitignore).
+# Production values are set as encrypted secrets in the Cloudflare dashboard, not here.
+META_CAPI_TOKEN=
+META_TEST_EVENT_CODE=
+TIKTOK_EVENTS_TOKEN=
+TIKTOK_TEST_EVENT_CODE=
+PINTEREST_CONVERSIONS_TOKEN=
+MICROSOFT_CAPI_TOKEN=
