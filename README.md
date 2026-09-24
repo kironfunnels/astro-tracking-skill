@@ -15,24 +15,105 @@ O núcleo veio de uma implementação em produção. Foi testado com Astro 7, co
 
 ## Instalação
 
-### Claude Code (plugin)
+Há três formas de instalar. Para a maioria das pessoas, a primeira basta.
+
+| Forma | Quando usar |
+| --- | --- |
+| [1. Comando `npx skills`](#1-comando-npx-skills-recomendado) | Recomendado. Um comando, qualquer agente (Claude Code, Codex, Cursor, Gemini CLI…), atualização fácil |
+| [2. Plugin do Claude Code](#2-plugin-do-claude-code) | Quem usa só o Claude Code e prefere o gerenciador de plugins dele |
+| [3. Cópia manual](#3-cópia-manual) | Sem Node.js, ou para editar a skill localmente |
+
+Requisitos: forma 1, [Node.js](https://nodejs.org/) 22.20 ou mais recente (exigência do `skills`); forma 3, `git`. Os scripts da skill (auditoria, detecção de stack etc.) rodam com Node.js 18 ou mais recente.
+
+### 1. Comando `npx skills` (recomendado)
+
+Usa o [`skills`](https://www.npmjs.com/package/skills), um instalador aberto de skills para agentes de código. Ele baixa este repositório do GitHub, encontra a skill e a coloca na pasta que cada agente lê.
+
+**No projeto** (a skill fica só neste projeto e pode ir para o git junto com ele). Rode dentro da pasta do projeto:
+
+```bash
+npx skills add kironfunnels/easy-pixel
+```
+
+O comando pergunta em quais agentes instalar. Para pular as perguntas, informe os agentes:
+
+```bash
+npx skills add kironfunnels/easy-pixel -a claude-code -y               # só Claude Code
+npx skills add kironfunnels/easy-pixel -a claude-code -a codex -y      # Claude Code e Codex
+npx skills add kironfunnels/easy-pixel --all                           # todos os agentes suportados
+```
+
+Nomes de agentes mais comuns: `claude-code`, `codex`, `cursor`, `gemini-cli`, `github-copilot`, `windsurf`, `opencode`. A lista completa aparece se você passar um nome inválido em `-a`.
+
+**Para o usuário** (a skill vale em todos os projetos da máquina):
+
+```bash
+npx skills add kironfunnels/easy-pixel -g
+```
+
+**Onde os arquivos ficam** (instalação no projeto):
+
+```
+seu-projeto/
+├── .agents/skills/easy-pixel/     # cópia principal (Codex e agentes que seguem o padrão .agents)
+├── .claude/skills/easy-pixel/     # link para a pasta acima (Claude Code)
+└── skills-lock.json               # origem e hash da versão instalada
+```
+
+Versione o `skills-lock.json` se quiser que outras pessoas do time instalem a mesma skill: `npx skills experimental_install` restaura tudo a partir dele.
+
+**Atualizar, listar e remover:**
+
+```bash
+npx skills update                  # baixa a versão mais recente do GitHub (use -g para as globais)
+npx skills list                    # mostra as skills instaladas
+npx skills remove easy-pixel       # remove a skill
+```
+
+**Windows:** por padrão a skill é instalada com links simbólicos. Se aparecer erro de permissão ao criar o link, ative o Modo de Desenvolvedor do Windows ou acrescente `--copy` para copiar os arquivos em vez de linkar:
+
+```bash
+npx skills add kironfunnels/easy-pixel -a claude-code -y --copy
+```
+
+**Ver antes de instalar:** `npx skills add kironfunnels/easy-pixel --list` mostra a skill e a descrição sem instalar nada.
+
+### 2. Plugin do Claude Code
+
+Dentro de uma sessão do Claude Code:
 
 ```text
 /plugin marketplace add kironfunnels/easy-pixel
 /plugin install easy-pixel@kironfunnels-tracking
 ```
 
-### Cópia manual (qualquer agente que leia skills)
+Reinicie a sessão depois de instalar. Como plugin, o comando da skill ganha o prefixo do plugin (`/easy-pixel:easy-pixel`), mas não é preciso chamá-lo: basta pedir em texto (veja [Uso](#uso)). Para atualizar, use `/plugin` e escolha atualizar o marketplace `kironfunnels-tracking`.
+
+Para testar uma cópia local da skill (antes de publicar alterações), aponte o marketplace para a pasta do repositório:
+
+```text
+/plugin marketplace add C:\caminho\para\easy-pixel
+/plugin install easy-pixel@kironfunnels-tracking
+```
+
+### 3. Cópia manual
 
 ```bash
 git clone https://github.com/kironfunnels/easy-pixel.git
-# para um projeto:
+
+# para um projeto (Claude Code):
 cp -r easy-pixel/skills/easy-pixel <projeto>/.claude/skills/
-# ou para todos os projetos do usuário:
+# para um projeto (Codex e agentes que usam .agents):
+cp -r easy-pixel/skills/easy-pixel <projeto>/.agents/skills/
+# para todos os projetos do usuário (Claude Code):
 cp -r easy-pixel/skills/easy-pixel ~/.claude/skills/
 ```
 
-Agentes que usam `.agents/skills/` (Codex e outros) funcionam com a mesma pasta.
+No Windows (PowerShell), troque `cp -r` por `Copy-Item -Recurse`. Para atualizar, rode `git pull` no clone e copie a pasta de novo.
+
+### Conferir se funcionou
+
+Abra o agente na pasta do projeto e pergunte "quais skills você tem?". A `easy-pixel` deve aparecer na lista. No Claude Code, ela também aparece ao digitar `/`. A skill é acionada sozinha quando o pedido fala de pixel, CAPI, GA4, conversões, UTMs etc.
 
 ## Uso
 
